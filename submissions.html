@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Submissions Dashboard</title>
+    <style>
+        body { font-family: 'Arial', sans-serif; padding: 20px; background-color: #f4f4f9; }
+        h1 { color: #1e3c72; border-bottom: 2px solid #1e3c72; padding-bottom: 10px; }
+        #submissions-list { margin-top: 20px; }
+        .submission-card { 
+            background: white; 
+            padding: 20px; 
+            margin-bottom: 15px; 
+            border-left: 5px solid #007bff; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border-radius: 4px;
+            transition: transform 0.2s;
+        }
+        .submission-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 10px rgba(0,0,0,0.15);
+        }
+        .submission-card strong { font-weight: bold; margin-right: 5px; color: #333; }
+        .details { margin-top: 10px; padding-top: 10px; border-top: 1px dashed #ccc; white-space: pre-wrap; font-size: 0.95em; line-height: 1.4; }
+        .error { color: red; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>Portfolio Submissions Dashboard 🚀</h1>
+    <p>This page shows all data successfully saved by the form in your portfolio.</p>
+    
+    <div id="submissions-list">
+        <p>Loading submissions...</p>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', fetchSubmissions);
+
+        async function fetchSubmissions() {
+            const listDiv = document.getElementById('submissions-list');
+            listDiv.innerHTML = '<p>Fetching data from backend...</p>';
+
+            try {
+                // 🎯 This is the crucial line: Calls the GET /submissions API endpoint
+                const response = await fetch('http://localhost:5500/submissions');
+                
+                if (!response.ok) {
+                    // Handle server errors (e.g., 404, 500)
+                    throw new Error(`HTTP error! Status: ${response.status}. Check your server logs.`);
+                }
+                
+                const submissions = await response.json();
+                
+                listDiv.innerHTML = ''; // Clear 'Loading' message
+
+                if (submissions.length === 0) {
+                    listDiv.innerHTML = '<p><strong>No submissions found yet.</strong> After submitting the form, restart your server, and check this page again.</p>';
+                    return;
+                }
+
+                // Iterate through the data and create a card for each submission
+                submissions.forEach(sub => {
+                    const date = new Date(sub.submission_date).toLocaleString();
+                    
+                    const card = document.createElement('div');
+                    card.className = 'submission-card';
+                    card.innerHTML = `
+                        <p><strong>ID:</strong> ${sub.id}</p>
+                        <p><strong>Date:</strong> ${date}</p>
+                        <p><strong>Name:</strong> ${sub.name}</p>
+                        <p><strong>Email:</strong> <a href="mailto:${sub.email}">${sub.email}</a></p>
+                        <p><strong>About:</strong> ${sub.about || 'N/A'}</p>
+                        <div class="details"><strong>Details:</strong><br>${sub.prompt}</div>
+                    `;
+                    listDiv.appendChild(card);
+                });
+
+            } catch (error) {
+                console.error('Could not fetch submissions:', error);
+                listDiv.innerHTML = `<p class="error">Error loading submissions. Ensure your backend server is running on port 5500 and the database connection is successful. Details: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>
